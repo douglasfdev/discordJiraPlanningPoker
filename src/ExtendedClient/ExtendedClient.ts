@@ -15,7 +15,7 @@ import {
     ComponentsSelect,
     EventType
 } from "../types";
-import { configPlain } from "../config";
+import { ascii1, colors, configPlain } from "../config";
 import { join } from "path";
 import { readdirSync } from "fs";
 
@@ -49,6 +49,7 @@ export class ExtendedClient extends Client {
         this.registerModules();
         this.registerEvents();
         this.login(configPlain.token);
+        console.log(colors.FgGreen, ascii1);
     }
 
     private registerCommands(commands: Array<ApplicationCommandDataResolvable>) {
@@ -97,10 +98,9 @@ export class ExtendedClient extends Client {
             readdirSync(`${eventsPath}/${local}`).filter(fileCondition)
             .forEach(async fileName => {
                 const { name, once, run }: EventType<keyof ClientEvents> = (await import(`../events/${local}/${fileName}`))?.default;
-                console.log(name, once, run);
 
                 try {
-                    if (name && once){
+                    if (name && once) {
                         return this.once(name, run);
                     } else {
                         return this.on(name, run);

@@ -50,7 +50,7 @@ export class JiraService {
         assignee: fields.assignee.name,
       };
     } catch (error) {
-      console.error('Error creating issue:', error);
+      console.error('Error creating issue: ', error);
       throw error;
     }
   }
@@ -72,7 +72,7 @@ export class JiraService {
         return null;
       }
 
-      console.error('Error fetching issue:', error);
+      console.error('Error fetching issue: ', error);
       throw error;
     }
   }

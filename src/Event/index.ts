@@ -1,2 +1,2 @@
-import { Events } from "./Event";
-export { Events };
+import { Event } from "./Event";
+export { Event };

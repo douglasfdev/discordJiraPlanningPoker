@@ -1,4 +1,8 @@
-import { ComponentsButton, ComponentsModal, ComponentsSelect } from "../types/ComponentsTypes";
+import {
+    ComponentsButton,
+    ComponentsModal,
+    ComponentsSelect
+} from "../types/ComponentsTypes";
 
 export interface ICommandComponents {
     buttons?: ComponentsButton,
