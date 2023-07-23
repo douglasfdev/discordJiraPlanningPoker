@@ -36,7 +36,6 @@ export const colors = {
     BgGray: "\x1b[100m",
 }
 
-
 export const ascii1 = `
 /$$$$$$$  /$$                               /$$                           /$$$$$$$           /$$                                 /$$$$$$$              /$$
 | $$__  $$| $$                              |__/                          | $$__  $$         | $$                                | $$__  $$            | $$
@@ -50,3 +49,16 @@ export const ascii1 = `
                                                           |  $$$$$$/
                                                            \\______/
 `;
+
+const fibonacci = (n: number): number => {
+    if (n <= 1) return n;
+    return fibonacci(n - 1) + fibonacci(n - 2);
+};
+
+export const fibonacciSequence = (limit: number): Array<number> => {
+    const sequence: Array<number> = [];
+    for (let i = 0; i <= limit; i++) {
+      sequence.push(fibonacci(i));
+    }
+    return sequence;
+  };

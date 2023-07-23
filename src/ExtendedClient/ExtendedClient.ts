@@ -88,6 +88,7 @@ export class ExtendedClient extends Client {
         })
 
         this.on(Events.ClientReady, () => this.registerCommands(slashCommands));
+        this.on(Events.InteractionCreate, () => this.registerCommands(slashCommands));
     }
 
     private registerEvents() {
