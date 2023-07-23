@@ -2,7 +2,7 @@
 import axios from 'axios';
 import { IJiraIssue } from '../interfaces/IJiraIssue';
 
-const JIRA_API_BASE_URL = 'https://your-jira-instance.atlassian.net/rest/api/2';
+const JIRA_API_BASE_URL = 'rest/api/latest/issue/';
 
 export class JiraService {
   private apiKey: string;

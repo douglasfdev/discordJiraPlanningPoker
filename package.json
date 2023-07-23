@@ -2,15 +2,18 @@
   "name": "vdt-planning-poker",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/index.js",
+  "main": "main.ts",
   "scripts": {
+    "dev": "npx ts-node src/main.ts",
     "build": "tsc -p ."
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/node": "^20.4.3",
     "axios": "^1.4.0",
+    "discord-api-types": "^0.37.50",
     "discord.js": "^14.11.0",
     "dotenv": "^16.3.1",
     "typescript": "^5.1.6"
