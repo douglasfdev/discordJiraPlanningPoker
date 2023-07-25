@@ -9,6 +9,7 @@ import {
     Collection,
 } from "discord.js";
 import { Command } from "../../Command";
+import { jira } from '../../Jira'
 
 export default new Command({
     name: "start",
@@ -43,6 +44,8 @@ export default new Command({
             interaction.reply({ ephemeral: true, content: 'Vocé precisa especificar uma tarefa' })
         };
 
+        const obtemTarefa = await jira.getIssues(tarefa);
+
         const confirm = new ButtonBuilder({
             custom_id: "confirm",
             customId: "confirm",
@@ -63,20 +66,18 @@ export default new Command({
 
         await interaction.reply({
             ephemeral: true,
-            content: `Seu voto vai ser na tarefa de id: ${tarefa}. E seu voto foi ${voto}`,
+            content: `Seu voto vai ser na tarefa: \n ${obtemTarefa}.\n E seu voto foi: ${voto}`,
             components: [ row ],
         })
     },
     buttons: new Collection([
         [ 'confirm', async (interaction: ButtonInteraction<CacheType>) => {
-            await interaction.deferReply()
-            await interaction.editReply({ content: 'Voto confirmado' })
-            await interaction.channel?.send('Voto confirmado')
+            await interaction.deferReply();
+            await interaction.editReply({ content: 'Voto confirmado' });
         }],
         [ 'cancel', async (interaction: ButtonInteraction<CacheType>) => {
-            await interaction.deferReply()
-            await interaction.editReply({ content: 'Voto cancelado' })
-            await interaction.channel?.send('Voto cancelado')
+            await interaction.deferReply();
+            await interaction.editReply({ content: 'Voto cancelado' });
         }],
     ])
 })

@@ -55,10 +55,16 @@ const fibonacci = (n: number): number => {
     return fibonacci(n - 1) + fibonacci(n - 2);
 };
 
-export const fibonacciSequence = (limit: number): Array<number> => {
+export const fibonacciSequence = (limit: number = 21): Array<number> => {
     const sequence: Array<number> = [];
     for (let i = 0; i <= limit; i++) {
       sequence.push(fibonacci(i));
     }
     return sequence;
-  };
+};
+
+export const jiraConfig = {
+    domainURL: `https://${process.env.JIRA_DOMAIN}.atlassian.net`,
+    token: process.env.JIRA_TOKEN as string,
+    user: process.env.JIRA_USERNAME as string,
+}
