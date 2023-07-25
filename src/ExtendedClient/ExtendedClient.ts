@@ -31,7 +31,11 @@ export class ExtendedClient extends Client {
         super({
             intents: new IntentsBitField().add(
                 GatewayIntentBits.Guilds,
+                GatewayIntentBits.GuildMembers,
                 GatewayIntentBits.GuildMessages,
+                GatewayIntentBits.DirectMessages,
+                GatewayIntentBits.GuildMessageReactions,
+                GatewayIntentBits.MessageContent,
             ),
             partials: [
                 Partials.Channel,
@@ -79,10 +83,12 @@ export class ExtendedClient extends Client {
                 this.commands.set(name, command);
                 slashCommands.push(command);
 
-                if (buttons && selects && modals) {
-                    buttons.forEach((run, key) => this.buttons.set(key, run));
-                    selects.forEach((run, key) => this.selects.set(key, run));
-                    modals.forEach((run, key) => this.modals.set(key, run));
+                const validCommands = buttons || selects || modals;
+
+                if (validCommands) {
+                    buttons?.forEach((run, key) => this.buttons.set(key, run));
+                    selects?.forEach((run, key) => this.selects.set(key, run));
+                    modals?.forEach((run, key) => this.modals.set(key, run));
                 }
             })
         })

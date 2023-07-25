@@ -1,50 +1,82 @@
 import {
     ActionRowBuilder,
+    ApplicationCommandOptionType,
     ApplicationCommandType,
     ButtonBuilder,
+    ButtonInteraction,
     ButtonStyle,
+    CacheType,
     Collection,
-    GuildChannel
 } from "discord.js";
 import { Command } from "../../Command";
-import { Poker } from "../../Poker";
-import { run } from "node:test";
 
 export default new Command({
     name: "start",
     description: "starts a planning",
     type: ApplicationCommandType.ChatInput,
-    async execute(message, { games }): Promise<void> {
-
-        const channel = message.channel as GuildChannel;
-
-        if (channel) {
-            console.log(`Planning poker is being started in channel: ${channel.name}`);
+    options: [
+        {
+            name: 'tarefa',
+            description: 'Digite um uma tarefa pelo ID',
+            type: ApplicationCommandOptionType.Subcommand,
+            options: [
+                {
+                    name: 'id',
+                    description: 'Digite um id de tarefa',
+                    type: ApplicationCommandOptionType.String,
+                    required: true,
+                },
+                {
+                    name: 'votacao',
+                    description: 'Digite um valor entre 1 e 21',
+                    type: ApplicationCommandOptionType.String,
+                    required: true,
+                }
+            ],
         }
+    ],
+    async run({ interaction, options }) {
+        const tarefa = options.getString('id', true);
+        const voto = options.getString('votacao', true);
 
-        if (games.has(channel.id)) {
-            message.channel.send("Game is already in progress in this channel!");
-            return;
-        }
+        if (!tarefa || !voto) {
+            interaction.reply({ ephemeral: true, content: 'Vocé precisa especificar uma tarefa' })
+        };
 
-        games.set(channel.id, new Poker());
+        const confirm = new ButtonBuilder({
+            custom_id: "confirm",
+            customId: "confirm",
+            label: "confirmar voto",
+            style: ButtonStyle.Success,
+        })
 
-        await message.channel.send(
-            [
-              "Welcome to planning poker.\n",
-              "Start the first round with:",
-              "> !play <question>\n",
-              "You'll have 30 seconds to send me a DM containing a single integer representing your estimated story points",
-              "(an easy way to DM me is to click my name above my messages).\n",
-              "Stop playing at any time with:",
-              "> !end",
-              "If you want to play along, react to this message.",
-            ].join("\n")
-        );
+		const cancel = new ButtonBuilder({
+            custom_id: "cancel",
+            customId: "cancel",
+            label: "cancelar voto",
+            style: ButtonStyle.Danger,
+        })
 
-        message.channel.lastMessage?.react("👍");
+        const row = new ActionRowBuilder<ButtonBuilder>({
+            components: [ confirm, cancel ],
+        })
+
+        await interaction.reply({
+            ephemeral: true,
+            content: `Seu voto vai ser na tarefa de id: ${tarefa}. E seu voto foi ${voto}`,
+            components: [ row ],
+        })
     },
-    run({ interaction }) {
-        return;
-    }
+    buttons: new Collection([
+        [ 'confirm', async (interaction: ButtonInteraction<CacheType>) => {
+            await interaction.deferReply()
+            await interaction.editReply({ content: 'Voto confirmado' })
+            await interaction.channel?.send('Voto confirmado')
+        }],
+        [ 'cancel', async (interaction: ButtonInteraction<CacheType>) => {
+            await interaction.deferReply()
+            await interaction.editReply({ content: 'Voto cancelado' })
+            await interaction.channel?.send('Voto cancelado')
+        }],
+    ])
 })

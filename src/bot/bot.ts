@@ -28,7 +28,7 @@ export class Bot {
   }
 
   public handleMessage(message: Message): void {
-    if (!message.content.startsWith(this.prefix) || message.author.bot) return;
+    if (message.author.bot) return;
 
     const args = message.content.slice(this.prefix.length).trim().split(/ +/);
     const command = args.shift()?.toLowerCase();
@@ -49,7 +49,7 @@ export class Bot {
     }
   }
 
-  private generateFibonacciSequence(): number[] {
+  public generateFibonacciSequence(): number[] {
     const sequence: number[] = [0, 1];
     while (sequence[sequence.length - 1] + sequence[sequence.length - 2] <= 89) {
       const nextFibonacciNumber = sequence[sequence.length - 1] + sequence[sequence.length - 2];

@@ -15,7 +15,6 @@ export default new Command({
             .setThumbnail('https://i.imgur.com/7eRQDGq.png')
             .addFields(
                 { name: '/start', value: 'Inicia o planning poker', inline: true },
-                { name: '/vote', value: 'Vote em uma tarefa', inline: true },
                 { name: '/show', value: 'Mostra a pontuação', inline: true },
                 { name: '/end', value: 'Encerra o planning poker', inline: true },
             )
