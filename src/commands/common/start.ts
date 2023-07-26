@@ -41,7 +41,6 @@ export default new Command({
         const task = options.getString('id', true);
         const vote = options.getString('votacao', true);
         const votes: Array<string> = [];
-        const membersCount = message.channel.members.count()
 
         if (!vote || !task) {
             interaction.reply({ ephemeral: true, content: 'Vocé precisa especificar uma tarefa' })
