@@ -6,7 +6,7 @@ export class Poker {
     currentAnswers: Array<IAnswer>;
     currentQuestion: string;
     questions: Array<IQuestion>;
-    users: User[];
+    users: Array<User>;
 
     constructor() {
       this.isQuestionRunning = false;

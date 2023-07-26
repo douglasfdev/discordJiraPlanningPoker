@@ -3,13 +3,13 @@ import {
     ApplicationCommandOptionType,
     ApplicationCommandType,
     ButtonBuilder,
-    ButtonInteraction,
     ButtonStyle,
-    CacheType,
-    Collection,
+    ComponentType,
+    EmbedBuilder,
 } from "discord.js";
 import { Command } from "../../Command";
 import { jira } from '../../Jira'
+import { discordClient } from "../../main";
 
 export default new Command({
     name: "start",
@@ -37,26 +37,27 @@ export default new Command({
         }
     ],
     async run({ interaction, options }) {
-        const tarefa = options.getString('id', true);
-        const voto = options.getString('votacao', true);
+        const task = options.getString('id', true);
+        const vote = options.getString('votacao', true);
+        const votes: Array<string> = [];
 
-        if (!tarefa || !voto) {
+        if (!vote || !task) {
             interaction.reply({ ephemeral: true, content: 'Vocé precisa especificar uma tarefa' })
         };
 
-        const obtemTarefa = await jira.getIssues(tarefa);
+        const getTask = await jira.getIssues(task);
 
         const confirm = new ButtonBuilder({
             custom_id: "confirm",
             customId: "confirm",
-            label: "confirmar voto",
+            label: "Confirmar Voto",
             style: ButtonStyle.Success,
         })
 
 		const cancel = new ButtonBuilder({
             custom_id: "cancel",
             customId: "cancel",
-            label: "cancelar voto",
+            label: "Cancelar Voto",
             style: ButtonStyle.Danger,
         })
 
@@ -66,18 +67,42 @@ export default new Command({
 
         await interaction.reply({
             ephemeral: true,
-            content: `Seu voto vai ser na tarefa: \n ${obtemTarefa}.\n E seu voto foi: ${voto}`,
             components: [ row ],
+            fetchReply: true,
+            embeds: [
+                new EmbedBuilder()
+                .setColor("Gold")
+                .setTitle(`${getTask.summary}`)
+                .setDescription(`[${task}](https://vadetaxi.atlassian.net/browse/${task})`)
+                .setThumbnail('https://i.imgur.com/7eRQDGq.png')
+                .addFields(
+                    { name: 'Voto', value: `${vote}` },
+                )
+            ]
         })
+
+        discordClient.on('interactionCreate', (interaction) => {
+            const { user } = interaction;
+            if (!interaction.isButton()) return;
+            if (interaction.customId === 'confirm') {
+                votes.push(interaction.user.username);
+
+                interaction.reply({
+                    embeds: [new EmbedBuilder()
+                        .setColor("Gold")
+                        .setTitle(`${user.username}`)
+                        .setThumbnail(`${user.avatarURL()}`)
+                        .addFields(
+                            { name: 'Voto', value: `${vote}`, inline: true },
+                            { name: 'Tarefa', value: `[${task}](https://vadetaxi.atlassian.net/browse/${task})`, inline: true },
+                        )
+                    ]
+                })
+            } else {
+                interaction.reply({ content: 'Voto cancelado', ephemeral: true });
+                votes.splice(votes.indexOf(user.username), 1);
+                return;
+            }
+        });
     },
-    buttons: new Collection([
-        [ 'confirm', async (interaction: ButtonInteraction<CacheType>) => {
-            await interaction.deferReply();
-            await interaction.editReply({ content: 'Voto confirmado' });
-        }],
-        [ 'cancel', async (interaction: ButtonInteraction<CacheType>) => {
-            await interaction.deferReply();
-            await interaction.editReply({ content: 'Voto cancelado' });
-        }],
-    ])
 })
