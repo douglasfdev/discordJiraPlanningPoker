@@ -10,6 +10,7 @@ import {
 import { Command } from "../../Command";
 import { jira } from '../../Jira'
 import { discordClient } from "../../main";
+import { jiraConfig } from "../../config";
 
 export default new Command({
     name: "start",
@@ -40,6 +41,7 @@ export default new Command({
         const task = options.getString('id', true);
         const vote = options.getString('votacao', true);
         const votes: Array<string> = [];
+        const membersCount = message.channel.members.count()
 
         if (!vote || !task) {
             interaction.reply({ ephemeral: true, content: 'Vocé precisa especificar uma tarefa' })
@@ -73,7 +75,7 @@ export default new Command({
                 new EmbedBuilder()
                 .setColor("Gold")
                 .setTitle(`${getTask.summary}`)
-                .setDescription(`[${task}](https://vadetaxi.atlassian.net/browse/${task})`)
+                .setDescription(`[${task}](${jiraConfig.domainURL}/${task})`)
                 .setThumbnail('https://i.imgur.com/7eRQDGq.png')
                 .addFields(
                     { name: 'Voto', value: `${vote}` },
