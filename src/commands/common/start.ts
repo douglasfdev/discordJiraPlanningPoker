@@ -4,7 +4,7 @@ import {
     ApplicationCommandType,
     ButtonBuilder,
     ButtonStyle,
-    ComponentType,
+    // UsersClicks, -> para contar a interação
     EmbedBuilder,
 } from "discord.js";
 import { Command } from "../../Command";
@@ -97,7 +97,8 @@ export default new Command({
                             { name: 'Voto', value: `${vote}`, inline: true },
                             { name: 'Tarefa', value: `[${task}](https://vadetaxi.atlassian.net/browse/${task})`, inline: true },
                         )
-                    ]
+                    ],
+                    ephemeral: true,
                 })
             } else {
                 interaction.reply({ content: 'Voto cancelado', ephemeral: true });
