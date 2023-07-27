@@ -4,7 +4,7 @@
   "description": "",
   "main": "main.ts",
   "scripts": {
-    "dev": "npx ts-node src/main.ts",
+    "start:dev": "npx ts-node src/main.ts",
     "start": "tsc && node dist/index.js",
     "build": "tsc -p ."
   },

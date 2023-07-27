@@ -48,7 +48,7 @@ class Jira {
             const { data } = await axios.request(config);
 
             return {
-                summary: data.fields.summary
+                summary: data.fields.summary,
             };
         } catch(er: any | unknown) {
             console.error(er.response);

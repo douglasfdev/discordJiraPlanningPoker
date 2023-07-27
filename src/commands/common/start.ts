@@ -4,12 +4,14 @@ import {
     ApplicationCommandType,
     ButtonBuilder,
     ButtonStyle,
+    Collection,
+    ComponentType,
     // UsersClicks, -> para contar a interação
     EmbedBuilder,
+    Events,
 } from "discord.js";
 import { Command } from "../../Command";
 import { jira } from '../../Jira'
-import { discordClient } from "../../main";
 import { jiraConfig } from "../../config";
 
 export default new Command({
@@ -40,10 +42,12 @@ export default new Command({
     async run({ interaction, options }) {
         const task = options.getString('id', true);
         const vote = options.getString('votacao', true);
+        const voters: Array<any> = [];
         const votes: Array<string> = [];
+        const { channel } = interaction;
 
         if (!vote || !task) {
-            interaction.reply({ ephemeral: true, content: 'Vocé precisa especificar uma tarefa' })
+            interaction.reply({ ephemeral: true, content: 'Vocé precisa especificar uma tarefa e um voto' })
         };
 
         const getTask = await jira.getIssues(task);
@@ -55,56 +59,63 @@ export default new Command({
             style: ButtonStyle.Success,
         })
 
-		const cancel = new ButtonBuilder({
+        const cancel = new ButtonBuilder({
             custom_id: "cancel",
             customId: "cancel",
             label: "Cancelar Voto",
             style: ButtonStyle.Danger,
         })
 
-        const row = new ActionRowBuilder<ButtonBuilder>({
+        const confirmAndCancel = new ActionRowBuilder<ButtonBuilder>({
             components: [ confirm, cancel ],
         })
 
-        await interaction.reply({
+        const message = await interaction.reply({
             ephemeral: true,
-            components: [ row ],
+            components: [ confirmAndCancel ],
             fetchReply: true,
             embeds: [
                 new EmbedBuilder()
-                .setColor("Gold")
-                .setTitle(`${getTask.summary}`)
-                .setDescription(`[${task}](${jiraConfig.domainURL}/${task})`)
-                .setThumbnail('https://i.imgur.com/7eRQDGq.png')
-                .addFields(
-                    { name: 'Voto', value: `${vote}` },
-                )
+                    .setColor("Gold")
+                    .setTitle(`${getTask.summary}`)
+                    .setDescription(`[${task}](${jiraConfig.domainURL}/${task})`)
+                    .setThumbnail('https://i.imgur.com/7eRQDGq.png')
+                    .addFields(
+                        { name: 'Voto', value: `${vote}` },
+                    )
             ]
         })
 
-        discordClient.on('interactionCreate', (interaction) => {
-            const { user } = interaction;
-            if (!interaction.isButton()) return;
-            if (interaction.customId === 'confirm') {
-                votes.push(interaction.user.username);
+        const collector = message.createMessageComponentCollector({
+            componentType: ComponentType.Button,
+        })
 
-                interaction.reply({
-                    embeds: [new EmbedBuilder()
-                        .setColor("Gold")
-                        .setTitle(`${user.username}`)
-                        .setThumbnail(`${user.avatarURL()}`)
-                        .addFields(
-                            { name: 'Voto', value: `${vote}`, inline: true },
-                            { name: 'Tarefa', value: `[${task}](https://vadetaxi.atlassian.net/browse/${task})`, inline: true },
-                        )
-                    ],
-                    ephemeral: true,
-                })
-            } else {
-                interaction.reply({ content: 'Voto cancelado', ephemeral: true });
-                votes.splice(votes.indexOf(user.username), 1);
+        collector.on('collect', async (buttonInteraction) => {
+            const { user } = buttonInteraction;
+
+            votes.push(vote);
+
+            if (voters.includes(user.id)) {
                 return;
             }
-        });
+
+            voters.push(user);
+
+            buttonInteraction.reply({
+                embeds: [
+                    new EmbedBuilder()
+                        .setColor("Gold")
+                        .setTitle(`${user.username}`)
+                        .setDescription(`(${user})`)
+                        .setThumbnail(`${user.displayAvatarURL()}`)
+                        .addFields(
+                            { name: 'Voto', value: `${vote}`, inline: true },
+                            { name: 'Tarefa', value: `[${task}](https://vadetaxi.atlassian.net/browse/${task})
+                            ${getTask.summary}`, inline: true },
+                        )
+                ],
+                ephemeral: true,
+            })
+        })
     },
 })
