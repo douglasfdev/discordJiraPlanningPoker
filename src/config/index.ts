@@ -64,6 +64,7 @@ export const fibonacciSequence = (limit: number = 21): Array<number> => {
 };
 
 export const jiraConfig = {
+    domain: process.env.JIRA_DOMAIN as string,
     domainURL: `https://${process.env.JIRA_DOMAIN}.atlassian.net`,
     token: process.env.JIRA_TOKEN as string,
     user: process.env.JIRA_USERNAME as string,

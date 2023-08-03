@@ -5,7 +5,6 @@ import {
 } from "./ComponentsTypes";
 import { CommandType } from "./CommandType";
 import { EventType } from "./EventType";
-import { GamesType } from "./GamesType";
 
 export type {
     ComponentsButton,
@@ -13,5 +12,4 @@ export type {
     ComponentsModal,
     CommandType,
     EventType,
-    GamesType,
 }

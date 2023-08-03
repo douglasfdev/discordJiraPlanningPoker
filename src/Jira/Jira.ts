@@ -47,11 +47,23 @@ class Jira {
 
             const { data } = await axios.request(config);
 
+            if (!data.fields.summary) {
+                throw new Error('Issue not found.');
+            }
+
             return {
                 summary: data.fields.summary,
             };
         } catch(er: any | unknown) {
-            console.error(er.response);
+            const { status, statusText, config } = er.response;
+            console.error({
+                status,
+                statusText,
+                url: config.url,
+                data: config.data,
+                message: "Not Found"
+            });
+            return {};
         }
     }
 }

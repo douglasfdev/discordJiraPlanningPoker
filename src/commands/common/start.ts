@@ -6,9 +6,7 @@ import {
     ButtonStyle,
     Collection,
     ComponentType,
-    // UsersClicks, -> para contar a interação
     EmbedBuilder,
-    Events,
 } from "discord.js";
 import { Command } from "../../Command";
 import { jira } from '../../Jira'
@@ -40,82 +38,152 @@ export default new Command({
         }
     ],
     async run({ interaction, options }) {
-        const task = options.getString('id', true);
-        const vote = options.getString('votacao', true);
-        const voters: Array<any> = [];
-        const votes: Array<string> = [];
-        const { channel } = interaction;
+        try {
+            const task = options.getString('id', true);
+            const vote = options.getString('votacao', true);
+            const voters: Collection<string, any> = new Collection();
+            const votes: Array<{ user: any; vote: string }> = [];
+            const { user } = interaction;
 
-        if (!vote || !task) {
-            interaction.reply({ ephemeral: true, content: 'Vocé precisa especificar uma tarefa e um voto' })
-        };
+            const member = interaction.options.getMember(user.username);
 
-        const getTask = await jira.getIssues(task);
+            console.log(member);
 
-        const confirm = new ButtonBuilder({
-            custom_id: "confirm",
-            customId: "confirm",
-            label: "Confirmar Voto",
-            style: ButtonStyle.Success,
-        })
+            if (!vote || !task) {
+                interaction.reply({
+                    ephemeral: true,
+                    content: 'Você precisa especificar uma tarefa e um voto'
+                });
+                return;
+            };
 
-        const cancel = new ButtonBuilder({
-            custom_id: "cancel",
-            customId: "cancel",
-            label: "Cancelar Voto",
-            style: ButtonStyle.Danger,
-        })
+            const getTask = await jira.getIssues(task);
 
-        const confirmAndCancel = new ActionRowBuilder<ButtonBuilder>({
-            components: [ confirm, cancel ],
-        })
-
-        const message = await interaction.reply({
-            ephemeral: true,
-            components: [ confirmAndCancel ],
-            fetchReply: true,
-            embeds: [
-                new EmbedBuilder()
-                    .setColor("Gold")
-                    .setTitle(`${getTask.summary}`)
-                    .setDescription(`[${task}](${jiraConfig.domainURL}/${task})`)
-                    .setThumbnail('https://i.imgur.com/7eRQDGq.png')
-                    .addFields(
-                        { name: 'Voto', value: `${vote}` },
-                    )
-            ]
-        })
-
-        const collector = message.createMessageComponentCollector({
-            componentType: ComponentType.Button,
-        })
-
-        collector.on('collect', async (buttonInteraction) => {
-            const { user } = buttonInteraction;
-
-            votes.push(vote);
-
-            if (voters.includes(user.id)) {
+            if (getTask.summary === undefined) {
+                interaction.reply({
+                    ephemeral: true,
+                    content: 'Tarefa não encontrada, tente novamente'
+                })
                 return;
             }
 
-            voters.push(user);
+            const confirm = new ButtonBuilder({
+                custom_id: "confirm",
+                customId: "confirm",
+                label: "Confirmar Voto",
+                style: ButtonStyle.Success,
+            })
 
-            buttonInteraction.reply({
+            const cancel = new ButtonBuilder({
+                custom_id: "cancel",
+                customId: "cancel",
+                label: "Cancelar Voto",
+                style: ButtonStyle.Danger,
+            })
+
+            const finish = new ButtonBuilder({
+                custom_id: "finish",
+                customId: "finish",
+                label: "Finalizar",
+                style: ButtonStyle.Primary,
+            });
+
+            const finishRow = new ActionRowBuilder<ButtonBuilder>({
+                components: [finish],
+            });
+
+            const confirmAndCancel = new ActionRowBuilder<ButtonBuilder>({
+                components: [confirm, cancel],
+            })
+
+            const message = await interaction.reply({
+                ephemeral: true,
+                components: [confirmAndCancel],
+                fetchReply: true,
                 embeds: [
                     new EmbedBuilder()
                         .setColor("Gold")
-                        .setTitle(`${user.username}`)
-                        .setDescription(`(${user})`)
-                        .setThumbnail(`${user.displayAvatarURL()}`)
+                        .setTitle(`${getTask.summary}`)
+                        .setDescription(`[${task}](${jiraConfig.domainURL}/${task})`)
+                        .setThumbnail('https://i.imgur.com/7eRQDGq.png')
                         .addFields(
-                            { name: 'Voto', value: `${vote}`, inline: true },
-                            { name: 'Tarefa', value: `[${task}](https://vadetaxi.atlassian.net/browse/${task})
-                            ${getTask.summary}`, inline: true },
+                            { name: 'Voto', value: `${vote}` },
                         )
-                ],
-                ephemeral: true,
+                ]
             })
-        })
-    },
+
+            const collector = message.createMessageComponentCollector({
+                componentType: ComponentType.Button,
+            })
+
+            collector.on('collect', async (buttonInteraction) => {
+                const { user, message, customId } = buttonInteraction;
+
+                switch (customId) {
+                    case 'confirm':
+
+                }
+
+                if (customId !== 'confirm') {
+                    console.log(message.channel.id);
+                    return;
+                } else {
+                    if (voters.has(user.id)) {
+                        votes.splice(
+                            votes.findIndex((data) => data.user.id === user.id),
+                            1
+                        );
+                        voters.delete(user.id);
+                        return;
+                    }
+                }
+
+                if (!voters.has(user.id)) {
+                    votes.push({ user, vote })
+                    voters.set(user.id, true);
+                }
+
+                buttonInteraction.reply({
+                    embeds: [
+                        new EmbedBuilder()
+                            .setColor("Gold")
+                            .setTitle(`${user.username}`)
+                            .setDescription(`(${user})`)
+                            .setThumbnail(`${user.displayAvatarURL()}`)
+                            .addFields(
+                                { name: 'Voto', value: `${vote}`, inline: true },
+                                {
+                                    name: 'Tarefa', value: `[${task}](https://${jiraConfig.domain}.atlassian.net/browse/${task})
+                                ${getTask.summary}`, inline: true
+                                },
+                            )
+                    ],
+                    ephemeral: true,
+                });
+
+                collector.on('end', async () => {
+                    const totalVotes = votes
+                        .reduce((total, data) => total + parseInt(data.vote), 0);
+                    const average = votes.length > 0 ? totalVotes / votes.length : 'N/A';
+                    const { followUp } = interaction;
+
+                    await interaction.reply({
+                        components: [finishRow],
+                        embeds: [
+                            new EmbedBuilder()
+                                .setColor("Gold")
+                                .setTitle(`Resultados ${getTask.summary}`)
+                                .addFields(
+                                    { name: "Total de Votos", value: `${totalVotes}`, inline: true },
+                                    { name: "Quantidade de Votos", value: `${votes.length}`, inline: true },
+                                    { name: "Média", value: `${average}`, inline: true }
+                                ),
+                        ],
+                    })
+                })
+            })
+        } catch (er: any | unknown) {
+            console.error('Erro na chamada da API:', er.message);
+        }
+    }
 })
