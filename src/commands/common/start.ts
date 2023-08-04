@@ -7,11 +7,11 @@ import {
     Collection,
     ComponentType,
     EmbedBuilder,
-    GuildMember,
 } from "discord.js";
 import { Command } from "../../Command";
 import { jira } from '../../Jira'
 import { configPlain, jiraConfig } from "../../config";
+import { VotesType } from "../../types";
 
 export default new Command({
     name: "start",
@@ -43,7 +43,7 @@ export default new Command({
             const task = options.getString('id', true);
             const vote = options.getString('votacao', true);
             const voters: Collection<string, any> = new Collection();
-            const votes: Array<{ user: any; vote: string }> = [];
+            const votes: Array<VotesType> = [];
             const { guild } = interaction;
             const roles = configPlain.roleBackend || configPlain.roleMobile;
             const role = guild?.roles.cache.get(roles);
@@ -105,7 +105,7 @@ export default new Command({
 
             const collector = message.createMessageComponentCollector({
                 componentType: ComponentType.Button,
-                time: 120000,
+                time: 15000,
             })
 
             collector.on('collect', async (buttonInteraction) => {
@@ -158,14 +158,14 @@ export default new Command({
                             embeds: [
                                 new EmbedBuilder()
                                     .setColor("Gold")
-                                    .setTitle(`Resultados ${getTask.summary}`)
+                                    .setTitle(`Resultados de: ${getTask.summary} | Prioridade:`)
                                     .addFields(
                                         { name: "Total de Votos", value: `${totalVotes}`, inline: true },
                                         { name: "Quantidade de Votos", value: `${votes.length}`, inline: true },
-                                        { name: "Média", value: `${average}`, inline: true }
+                                        { name: "Média", value: `${average}`, inline: true },
                                     ),
                             ],
-                            content: `O coletor acabou, motivo: ${reason === 'time' ? 'tempo' : reason}'}, tivemos o total de ${collected.size} interações`,
+                            content: `O coletor acabou, motivo: ${reason === 'time' ? 'tempo' : reason}, tivemos o total de ${collected.size} interações`,
                         })
                     }
                 })

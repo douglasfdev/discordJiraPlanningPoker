@@ -20,7 +20,6 @@ export default new Command({
             .setTimestamp()
             .setFooter({ text: 'Vá de Taxi', iconURL: 'https://i.imgur.com/7eRQDGq.png' });
         interaction.reply({
-            ephemeral: true,
             embeds: [exampleEmbed],
             content: 'Comando /start já inicia o planning poker e após 2 minutos ele faz a contagem dos pontos'
         });
