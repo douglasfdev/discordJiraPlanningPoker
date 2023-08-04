@@ -7,10 +7,11 @@ import {
     Collection,
     ComponentType,
     EmbedBuilder,
+    GuildMember,
 } from "discord.js";
 import { Command } from "../../Command";
 import { jira } from '../../Jira'
-import { jiraConfig } from "../../config";
+import { configPlain, jiraConfig } from "../../config";
 
 export default new Command({
     name: "start",
@@ -43,21 +44,11 @@ export default new Command({
             const vote = options.getString('votacao', true);
             const voters: Collection<string, any> = new Collection();
             const votes: Array<{ user: any; vote: string }> = [];
-            const { user } = interaction;
-
-            const member = interaction.options.getMember(user.username);
-
-            console.log(member);
-
-            if (!vote || !task) {
-                interaction.reply({
-                    ephemeral: true,
-                    content: 'Você precisa especificar uma tarefa e um voto'
-                });
-                return;
-            };
-
-            const getTask = await jira.getIssues(task);
+            const { guild } = interaction;
+            const roles = configPlain.roleBackend || configPlain.roleMobile;
+            const role = guild?.roles.cache.get(roles);
+            const totalOfMembers = role?.members.size;
+            const getTask = await jira.getIssues(task.trim());
 
             if (getTask.summary === undefined) {
                 interaction.reply({
@@ -114,33 +105,29 @@ export default new Command({
 
             const collector = message.createMessageComponentCollector({
                 componentType: ComponentType.Button,
+                time: 120000,
             })
 
             collector.on('collect', async (buttonInteraction) => {
-                const { user, message, customId } = buttonInteraction;
+                const { user, customId } = buttonInteraction;
 
                 switch (customId) {
                     case 'confirm':
-
-                }
-
-                if (customId !== 'confirm') {
-                    console.log(message.channel.id);
-                    return;
-                } else {
-                    if (voters.has(user.id)) {
-                        votes.splice(
-                            votes.findIndex((data) => data.user.id === user.id),
-                            1
-                        );
-                        voters.delete(user.id);
+                        if (!voters.has(user.id)) {
+                            votes.push({ user, vote })
+                            voters.set(user.id, true);
+                        }
+                        break;
+                    case 'cancel':
+                        if (voters.has(user.id)) {
+                            votes.splice(votes.findIndex(v => v.user.id === user.id), 1);
+                            voters.delete(user.id);
+                        }
+                        buttonInteraction.reply({
+                            ephemeral: true,
+                            content: `Voto removido`,
+                        })
                         return;
-                    }
-                }
-
-                if (!voters.has(user.id)) {
-                    votes.push({ user, vote })
-                    voters.set(user.id, true);
                 }
 
                 buttonInteraction.reply({
@@ -160,26 +147,27 @@ export default new Command({
                     ],
                     ephemeral: true,
                 });
+                collector.on('end', async (collected, reason) => {
+                    if (votes.length === totalOfMembers) {
+                        const totalVotes = votes
+                            .reduce((total, data) => total + parseInt(data.vote), 0);
+                        const average = votes.length > 0 ? totalVotes / votes.length : 'N/A';
 
-                collector.on('end', async () => {
-                    const totalVotes = votes
-                        .reduce((total, data) => total + parseInt(data.vote), 0);
-                    const average = votes.length > 0 ? totalVotes / votes.length : 'N/A';
-                    const { followUp } = interaction;
-
-                    await interaction.reply({
-                        components: [finishRow],
-                        embeds: [
-                            new EmbedBuilder()
-                                .setColor("Gold")
-                                .setTitle(`Resultados ${getTask.summary}`)
-                                .addFields(
-                                    { name: "Total de Votos", value: `${totalVotes}`, inline: true },
-                                    { name: "Quantidade de Votos", value: `${votes.length}`, inline: true },
-                                    { name: "Média", value: `${average}`, inline: true }
-                                ),
-                        ],
-                    })
+                        interaction.followUp({
+                            components: [finishRow],
+                            embeds: [
+                                new EmbedBuilder()
+                                    .setColor("Gold")
+                                    .setTitle(`Resultados ${getTask.summary}`)
+                                    .addFields(
+                                        { name: "Total de Votos", value: `${totalVotes}`, inline: true },
+                                        { name: "Quantidade de Votos", value: `${votes.length}`, inline: true },
+                                        { name: "Média", value: `${average}`, inline: true }
+                                    ),
+                            ],
+                            content: `O coletor acabou, motivo: ${reason === 'time' ? 'tempo' : reason}'}, tivemos o total de ${collected.size} interações`,
+                        })
+                    }
                 })
             })
         } catch (er: any | unknown) {

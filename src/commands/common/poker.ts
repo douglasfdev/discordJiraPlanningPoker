@@ -15,12 +15,14 @@ export default new Command({
             .setThumbnail('https://i.imgur.com/7eRQDGq.png')
             .addFields(
                 { name: '/start', value: 'Inicia o planning poker', inline: true },
-                { name: '/show', value: 'Mostra a pontuação', inline: true },
-                { name: '/end', value: 'Encerra o planning poker', inline: true },
             )
             .setImage('https://i.imgur.com/7eRQDGq.png')
             .setTimestamp()
             .setFooter({ text: 'Vá de Taxi', iconURL: 'https://i.imgur.com/7eRQDGq.png' });
-        interaction.reply({ ephemeral: true, embeds: [exampleEmbed] });
+        interaction.reply({
+            ephemeral: true,
+            embeds: [exampleEmbed],
+            content: 'Comando /start já inicia o planning poker e após 2 minutos ele faz a contagem dos pontos'
+        });
     }
 });
