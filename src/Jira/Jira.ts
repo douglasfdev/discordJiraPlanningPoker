@@ -53,6 +53,7 @@ class Jira {
 
             return {
                 summary: data.fields.summary,
+                priority: data.fields.priority.iconUrl,
             };
         } catch(er: any | unknown) {
             const { status, statusText, config } = er.response;
