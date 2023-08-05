@@ -47,7 +47,7 @@ export default new Command({
             const isBackend = memberRole?.id === configPlain.roleBackendId ? memberRole?.id : memberRole?.name as string;
             const isMobile = memberRole?.id === configPlain.roleMobileId ? memberRole?.id : memberRole?.name as string;
             const role = guild?.roles.cache.get(isBackend || isMobile);
-            console.log(role);
+            // memberRole é o caminho console.log(role, isBackend, isMobile);
             const totalOfMembers = role?.members.size;
             const fibonacciOptions: SelectMenuComponentOptionData[] = [];
 
