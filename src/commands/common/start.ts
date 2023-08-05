@@ -37,9 +37,10 @@ export default new Command({
     async run({ interaction, options }) {
         try {
             const task = options.getString('id', true);
+            const { guild } = interaction;
             const voters: Collection<string, any> = new Collection();
             const votes: Array<VotesType> = [];
-            const { guild } = interaction;
+            const usedDropdowns: Set<string> = new Set();
             const roles = configPlain.roleBackend || configPlain.roleMobile;
             const role = guild?.roles.cache.get(roles);
             const totalOfMembers = role?.members.size;
@@ -94,14 +95,18 @@ export default new Command({
                 const { user, values } = selectInteraction;
 
                 const vote = values[0];
+
+                if (usedDropdowns.has(user.id)) {
+                    selectInteraction.reply({
+                        ephemeral: true,
+                        content: 'Você já votou nesta tarefa, seu voto não será contabilizado novamente.',
+                    });
+                    return;
+                }
+
                 if (!voters.has(user.id)) {
                     votes.push({user, vote});
                     voters.set(user.id, true);
-                } else {
-                    if (voters.has(user.id)) {
-                        votes.splice(votes.findIndex(v => v.user.id === user.id), 1);
-                        voters.delete(user.id);
-                    }
                 }
 
                 selectInteraction.reply({
