@@ -5,7 +5,7 @@
   "main": "main.ts",
   "scripts": {
     "start:dev": "nodemon src/main.ts",
-    "start": "node dist/index.js",
+    "start": "node dist/main.js",
     "build": "tsc",
     "docker:dev": "docker-compose -f docker-compose.yml up -d",
     "docker:start": "docker-compose -f docker-compose.prod.yml up -d",

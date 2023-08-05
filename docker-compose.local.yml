@@ -5,7 +5,7 @@ services:
     container_name: planing-poker-jira
     build:
       context: .
-      dockerfile: ./Dockerfile.prod
+      dockerfile: Dockerfile.local
     command: npm start
     ports:
       - "5000:5000"
