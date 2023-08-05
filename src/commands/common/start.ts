@@ -2,11 +2,11 @@ import {
     ActionRowBuilder,
     ApplicationCommandOptionType,
     ApplicationCommandType,
-    ButtonBuilder,
-    ButtonStyle,
     Collection,
     ComponentType,
     EmbedBuilder,
+    GuildMember,
+    Role,
     SelectMenuComponentOptionData,
     StringSelectMenuBuilder,
 } from "discord.js";
@@ -36,16 +36,24 @@ export default new Command({
     ],
     async run({ interaction, options }) {
         try {
+            const { guild, user } = interaction;
             const task = options.getString('id', true);
-            const { guild } = interaction;
+            const member = options.getMember('membro') as GuildMember || interaction.member;
             const voters: Collection<string, any> = new Collection();
             const votes: Array<VotesType> = [];
             const usedDropdowns: Set<string> = new Set();
-            const roles = configPlain.roleBackend || configPlain.roleMobile;
-            const role = guild?.roles.cache.get(roles);
-            const totalOfMembers = role?.members.size;
             const getTask = await jira.getIssues(task.trim());
+            const memberRole = member.roles.cache.find(role => role);
+            const isBackend = memberRole?.id === configPlain.roleBackendId ? memberRole?.id : memberRole?.name as string;
+            const isMobile = memberRole?.id === configPlain.roleMobileId ? memberRole?.id : memberRole?.name as string;
+            const role = guild?.roles.cache.get(isBackend || isMobile);
+            console.log(role);
+            const totalOfMembers = role?.members.size;
             const fibonacciOptions: SelectMenuComponentOptionData[] = [];
+
+            if (isBackend || isMobile) {
+                console.log(true);
+            }
 
             for (let i = 1; i <= 21; i++) {
                 if (isFibonacci(i)) {
@@ -92,7 +100,7 @@ export default new Command({
             })
 
             collector.on('collect', async (selectInteraction) => {
-                const { user, values } = selectInteraction;
+                const { values } = selectInteraction;
 
                 const vote = values[0];
 

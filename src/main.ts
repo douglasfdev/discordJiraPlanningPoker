@@ -8,11 +8,15 @@ discordClient.start();
 const server = createServer((req, res) => {
   const status = req.url === '/status';
 
-  if (status) {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    const statusResponse = { status: 'Server is running' };
-    res.end(JSON.stringify(statusResponse));
+  if (!status) {
+    res.writeHead(404, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ status: 'Not Found' }));
+    return;
   }
+
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  const statusResponse = { status: 'Server is running' };
+  res.end(JSON.stringify(statusResponse));
 });
 
 server.listen(process.env.PORT, () => {
