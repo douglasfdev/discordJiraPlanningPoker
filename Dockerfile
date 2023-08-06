@@ -1,15 +1,29 @@
-FROM node:lts-alpine
+FROM node:lts-alpine as builder
 
 RUN apk add --no-cache bash
 
-WORKDIR /home/node/app
+ENV NODE_ENV build
 
-COPY ./package.json /home/node/app/
+WORKDIR /home/node
 
-EXPOSE 5000
+COPY . /home/node/
 
-RUN npm i
+RUN npm ci \
+    && npm run build \
+    && npm prune --production
 
-COPY . .
+FROM node:lts-alpine
 
-CMD [ "npm", "run", "start:dev" ]
+ENV NODE_ENV production
+
+WORKDIR /home/node
+
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 CMD node healthcheck.js
+
+COPY --from=builder --chown=node:node /home/node/package*.json ./
+COPY --from=builder --chown=node:node /home/node/node_modules/ ./node_modules/
+COPY --from=builder --chown=node:node /home/node/dist/ ./dist/
+
+EXPOSE 8080
+
+CMD [ "npm", "start" ]

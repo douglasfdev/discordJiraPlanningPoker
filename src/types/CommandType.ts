@@ -2,6 +2,6 @@ import { ApplicationCommandData, AutocompleteInteraction, Message } from "discor
 import { ICommandComponents, ICommandProps } from "../interfaces";
 
 export type CommandType = ApplicationCommandData & ICommandComponents & {
-    run(props: ICommandProps): any
+    run(props: ICommandProps): void
     autoComplete?: (interaction: AutocompleteInteraction) => any;
 }

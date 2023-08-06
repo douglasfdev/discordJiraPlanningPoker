@@ -2,17 +2,16 @@ FROM node:lts-alpine
 
 RUN apk add --no-cache bash
 
-WORKDIR /home/node/app
+WORKDIR /home/node/
 
-COPY ./package.json /home/node/app/
+COPY . /home/node/
 
-EXPOSE 5000
+EXPOSE 8080
 
-RUN npm i && \
-    npm run build &&
+RUN npm i
 
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 CMD node healthcheck.js
 
 COPY . .
 
-CMD [ "npm", "start" ]
+CMD [ "npm", "run", "start:dev" ]

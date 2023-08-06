@@ -4,8 +4,12 @@ export const configPlain = {
     applicationId: process.env.APPLICATION_ID as string,
     applicationKey: process.env.PUBLIC_KEY as string,
     guildId: process.env.GUILD_ID as string,
-    roleBackend: process.env.ROLE_ID_BACKEND as string,
-    roleMobile: process.env.ROLE_ID_MOBILE as string,
+    roleBackendId: process.env.ROLE_ID_BACKEND as string,
+    roleMobileId: process.env.ROLE_ID_MOBILE as string,
+    roleFrontendId: process.env.ROLE_ID_FRONTEND as string,
+    roleBackendName: process.env.ROLE_NAME_BACKEND as string,
+    roleMobileName: process.env.ROLE_NAME_MOBILE as string,
+    roleFrontendName: process.env.ROLE_NAME_FRONTEND as string,
 }
 
 export const colors = {

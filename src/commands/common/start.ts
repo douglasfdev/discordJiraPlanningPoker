@@ -2,11 +2,12 @@ import {
     ActionRowBuilder,
     ApplicationCommandOptionType,
     ApplicationCommandType,
-    ButtonBuilder,
-    ButtonStyle,
     Collection,
     ComponentType,
     EmbedBuilder,
+    GuildMember,
+    SelectMenuComponentOptionData,
+    StringSelectMenuBuilder,
 } from "discord.js";
 import { Command } from "../../Command";
 import { jira } from '../../Jira'
@@ -29,26 +30,36 @@ export default new Command({
                     type: ApplicationCommandOptionType.String,
                     required: true,
                 },
-                {
-                    name: 'votacao',
-                    description: 'Digite um valor entre 1 e 21',
-                    type: ApplicationCommandOptionType.String,
-                    required: true,
-                }
             ],
         }
     ],
     async run({ interaction, options }) {
         try {
+            const { guild, user } = interaction;
             const task = options.getString('id', true);
-            const vote = options.getString('votacao', true);
+            const member = options.getMember('membro') as GuildMember || interaction.member;
             const voters: Collection<string, any> = new Collection();
             const votes: Array<VotesType> = [];
-            const { guild } = interaction;
-            const roles = configPlain.roleBackend || configPlain.roleMobile;
-            const role = guild?.roles.cache.get(roles);
-            const totalOfMembers = role?.members.size;
             const getTask = await jira.getIssues(task.trim());
+            const memberRole = member.roles.cache.find(role => role);
+            const isBackend = memberRole?.id === configPlain.roleBackendId ? memberRole?.id as string : false;
+            const isMobile = memberRole?.id === configPlain.roleMobileId ? memberRole?.id as string : false;
+            const isFrontend = memberRole?.id === configPlain.roleFrontendId ? memberRole?.id as string : false;
+            const isVoter = isBackend as string ?
+                memberRole?.id as string : isMobile ?
+                    configPlain.roleMobileId as string : isFrontend as string;
+            const fibonacciOptions: SelectMenuComponentOptionData[] = [];
+            const role = guild?.roles.cache.get(isVoter);
+            const totalOfMembers = role?.members.size;
+
+            for (let i = 1; i <= 21; i++) {
+                if (isFibonacci(i)) {
+                    fibonacciOptions.push({
+                        label: i.toString(),
+                        value: i.toString(),
+                    });
+                }
+            }
 
             if (getTask.summary === undefined) {
                 interaction.reply({
@@ -58,79 +69,56 @@ export default new Command({
                 return;
             }
 
-            const confirm = new ButtonBuilder({
-                custom_id: "confirm",
-                customId: "confirm",
-                label: "Confirmar Voto",
-                style: ButtonStyle.Success,
-            })
-
-            const cancel = new ButtonBuilder({
-                custom_id: "cancel",
-                customId: "cancel",
-                label: "Cancelar Voto",
-                style: ButtonStyle.Danger,
-            })
-
-            const finish = new ButtonBuilder({
-                custom_id: "finish",
-                customId: "finish",
-                label: "Finalizar",
-                style: ButtonStyle.Primary,
-            });
-
-            const finishRow = new ActionRowBuilder<ButtonBuilder>({
-                components: [finish],
-            });
-
-            const confirmAndCancel = new ActionRowBuilder<ButtonBuilder>({
-                components: [confirm, cancel],
-            })
+            const selectVoteMenu = new ActionRowBuilder<StringSelectMenuBuilder>({components: [
+                new StringSelectMenuBuilder({
+                    customId: "vote_selection",
+                    placeholder: "Selecione um valor de votação",
+                    options: fibonacciOptions,
+                    minValues: 1,
+                    maxValues: 1,
+                })
+            ]});
 
             const message = await interaction.reply({
-                ephemeral: true,
-                components: [confirmAndCancel],
+                components: [selectVoteMenu],
                 fetchReply: true,
                 embeds: [
                     new EmbedBuilder()
                         .setColor("Gold")
                         .setTitle(`${getTask.summary}`)
-                        .setDescription(`[${task}](${jiraConfig.domainURL}/${task})`)
+                        .setDescription(`[${task}](${jiraConfig.domainURL}/${task}) \n
+                            ${memberRole}`)
                         .setThumbnail('https://i.imgur.com/7eRQDGq.png')
-                        .addFields(
-                            { name: 'Voto', value: `${vote}` },
-                        )
                 ]
             })
 
             const collector = message.createMessageComponentCollector({
-                componentType: ComponentType.Button,
+                componentType: ComponentType.StringSelect,
                 time: 15000,
             })
 
-            collector.on('collect', async (buttonInteraction) => {
-                const { user, customId } = buttonInteraction;
+            collector.on('collect', async (selectInteraction) => {
+                const { values } = selectInteraction;
 
-                switch (customId) {
-                    case 'confirm':
-                        if (!voters.has(user.id)) {
-                            votes.push({ user, vote })
-                            voters.set(user.id, true);
-                        }
-                        break;
-                    case 'cancel':
-                        if (voters.has(user.id)) {
-                            votes.splice(votes.findIndex(v => v.user.id === user.id), 1);
-                            voters.delete(user.id);
-                        }
-                        buttonInteraction.reply({
-                            ephemeral: true,
-                            content: `Voto removido`,
-                        })
-                        return;
+                const vote = values[0];
+
+                if (voters.has(user.id)) {
+                    selectInteraction.reply({
+                        ephemeral: true,
+                        content: 'Você já votou nesta tarefa, seu voto não será contabilizado novamente.',
+                    });
+                    return;
                 }
 
-                buttonInteraction.reply({
+                if (!voters.has(user.id)) {
+                    votes.push({user, vote});
+                    voters.set(user.id, true);
+                    message.edit({
+                        components: []
+                    })
+                }
+
+                selectInteraction.reply({
                     embeds: [
                         new EmbedBuilder()
                             .setColor("Gold")
@@ -147,6 +135,7 @@ export default new Command({
                     ],
                     ephemeral: true,
                 });
+
                 collector.on('end', async (collected, reason) => {
                     if (votes.length === totalOfMembers) {
                         const totalVotes = votes
@@ -154,7 +143,6 @@ export default new Command({
                         const average = votes.length > 0 ? totalVotes / votes.length : 'N/A';
 
                         interaction.followUp({
-                            components: [finishRow],
                             embeds: [
                                 new EmbedBuilder()
                                     .setColor("Gold")
@@ -173,5 +161,13 @@ export default new Command({
         } catch (er: any | unknown) {
             console.error('Erro na chamada da API:', er.message);
         }
-    }
+    },
 })
+
+function isFibonacci(num: number): boolean {
+    const fibNumbers = [1, 1];
+    while (fibNumbers[fibNumbers.length - 1] < num) {
+        fibNumbers.push(fibNumbers[fibNumbers.length - 1] + fibNumbers[fibNumbers.length - 2]);
+    }
+    return fibNumbers.includes(num);
+}

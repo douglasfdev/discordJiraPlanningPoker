@@ -6,6 +6,7 @@ import {
 import { CommandType } from "./CommandType";
 import { EventType } from "./EventType";
 import { VotesType } from "./VotesType";
+import { JiraType } from "./JiraType";
 
 export type {
     ComponentsButton,
@@ -14,4 +15,5 @@ export type {
     CommandType,
     EventType,
     VotesType,
+    JiraType,
 }

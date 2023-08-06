@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { IJira } from '../interfaces';
 import { jiraConfig } from '../config';
+import { JiraType } from '../types';
 
 class Jira {
     private readonly baseUrl: string;
@@ -31,7 +32,7 @@ class Jira {
         }
     }
 
-    public async getIssues(id: string): Promise<any> {
+    public async getIssues(id: string): Promise<JiraType> {
         try {
             const config = {
                 method: 'get',
