@@ -6,7 +6,6 @@ import {
     ComponentType,
     EmbedBuilder,
     GuildMember,
-    Role,
     SelectMenuComponentOptionData,
     StringSelectMenuBuilder,
 } from "discord.js";
@@ -41,19 +40,17 @@ export default new Command({
             const member = options.getMember('membro') as GuildMember || interaction.member;
             const voters: Collection<string, any> = new Collection();
             const votes: Array<VotesType> = [];
-            const usedDropdowns: Set<string> = new Set();
             const getTask = await jira.getIssues(task.trim());
             const memberRole = member.roles.cache.find(role => role);
-            const isBackend = memberRole?.id === configPlain.roleBackendId ? memberRole?.id : memberRole?.name as string;
-            const isMobile = memberRole?.id === configPlain.roleMobileId ? memberRole?.id : memberRole?.name as string;
-            const role = guild?.roles.cache.get(isBackend || isMobile);
-            // memberRole é o caminho console.log(role, isBackend, isMobile);
-            const totalOfMembers = role?.members.size;
+            const isBackend = memberRole?.id === configPlain.roleBackendId ? memberRole?.id as string : false;
+            const isMobile = memberRole?.id === configPlain.roleMobileId ? memberRole?.id as string : false;
+            const isFrontend = memberRole?.id === configPlain.roleFrontendId ? memberRole?.id as string : false;
+            const isVoter = isBackend as string ?
+                memberRole?.id as string : isMobile ?
+                    configPlain.roleMobileId as string : isFrontend as string;
             const fibonacciOptions: SelectMenuComponentOptionData[] = [];
-
-            if (isBackend || isMobile) {
-                console.log(true);
-            }
+            const role = guild?.roles.cache.get(isVoter);
+            const totalOfMembers = role?.members.size;
 
             for (let i = 1; i <= 21; i++) {
                 if (isFibonacci(i)) {
@@ -89,7 +86,8 @@ export default new Command({
                     new EmbedBuilder()
                         .setColor("Gold")
                         .setTitle(`${getTask.summary}`)
-                        .setDescription(`[${task}](${jiraConfig.domainURL}/${task})`)
+                        .setDescription(`[${task}](${jiraConfig.domainURL}/${task}) \n
+                            ${memberRole}`)
                         .setThumbnail('https://i.imgur.com/7eRQDGq.png')
                 ]
             })
@@ -104,7 +102,7 @@ export default new Command({
 
                 const vote = values[0];
 
-                if (usedDropdowns.has(user.id)) {
+                if (voters.has(user.id)) {
                     selectInteraction.reply({
                         ephemeral: true,
                         content: 'Você já votou nesta tarefa, seu voto não será contabilizado novamente.',
@@ -115,6 +113,9 @@ export default new Command({
                 if (!voters.has(user.id)) {
                     votes.push({user, vote});
                     voters.set(user.id, true);
+                    message.edit({
+                        components: []
+                    })
                 }
 
                 selectInteraction.reply({
@@ -134,6 +135,7 @@ export default new Command({
                     ],
                     ephemeral: true,
                 });
+
                 collector.on('end', async (collected, reason) => {
                     if (votes.length === totalOfMembers) {
                         const totalVotes = votes
@@ -159,7 +161,7 @@ export default new Command({
         } catch (er: any | unknown) {
             console.error('Erro na chamada da API:', er.message);
         }
-    }
+    },
 })
 
 function isFibonacci(num: number): boolean {
