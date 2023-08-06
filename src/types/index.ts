@@ -16,4 +16,3 @@ export type {
     EventType,
     VotesType,
     JiraType,
-}
